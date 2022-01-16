@@ -1,7 +1,7 @@
 #lang web-server
 
 (require threading
-         dotenv
+         ;; dotenv
          umask
          base64
          racket/logging)
@@ -23,6 +23,9 @@ Offers the following routes to enable/disable wifi on a RouterOS host.  Can also
 
 (define *userhost* (make-parameter #f))
 (define *keyfile* (make-parameter #f))
+(define *listen-port* (make-parameter 8080))
+(define *listen-ip* (make-parameter "127.0.0.1"))
+(define *known-hosts* (make-parameter #f))
 
 (define-logger app)
 
@@ -61,7 +64,7 @@ Offers the following routes to enable/disable wifi on a RouterOS host.  Can also
 
 
 (define (ssh-command cmd)
-  (define incantation (format "ssh -i~a ~a ~a" (*keyfile*) (*userhost*) cmd))
+  (define incantation (format "ssh -F/dev/null -oUserKnownHostsFile=~a -i~a ~a ~a" (*known-hosts*) (*keyfile*) (*userhost*) cmd))
   (log-app-debug "SSH: ~a" incantation)
   (match-define (list out in pid err proc)
     (process incantation))
@@ -69,7 +72,7 @@ Offers the following routes to enable/disable wifi on a RouterOS host.  Can also
   (define s
     (port->string (merge-input out err)))
   (log-app-debug "OUT: ~a" s)
-  s)
+  (regexp-replace #rx"Warning: Permanently added the RSA host key for[^\n]+\n" s ""))
 
 (define-syntax-rule (let0 ([binding val] more-bindings ...)
                           body body-rest ...)
@@ -78,10 +81,25 @@ Offers the following routes to enable/disable wifi on a RouterOS host.  Can also
     binding))
 
 (module+ main
-  ;; (dotenv-load!)
+  #;
+  (with-handlers ([exn:fail:filesystem? void])
+    (dotenv-load!))
+
 
   (with-logging-to-port (current-error-port)
     (thunk
+     (*known-hosts*
+      (let0 ([file (make-temporary-file)])
+            (with-output-to-file file (thunk (write-bytes (base64-decode (getenv "WIFI_TOGGLE_SSH_KNOWN_HOSTS")))
+                                             (newline)) #:exists 'must-truncate)))
+
+     (match (getenv "WIFI_TOGGLE_LISTEN_IP")
+       [#f (void)]
+       [s (*listen-ip* s)])
+
+     (match (getenv "WIFI_TOGGLE_LISTEN_PORT")
+       [#f (void)]
+       [s (*listen-port* (string->number s))])
      (*keyfile*
       (path->string
        (with-umask #o077
@@ -94,6 +112,8 @@ Offers the following routes to enable/disable wifi on a RouterOS host.  Can also
                     #:file-not-found-responder four-oh-four-responder
                     #:servlet-path "/"
                     #:servlet-regexp #rx""
-                    #:port 12341))
+                    #:port (*listen-port*)
+                    #:listen-ip (*listen-ip*)
+                    #:launch-browser? #f))
     #:logger app-logger
     'debug))

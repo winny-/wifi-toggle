@@ -1,0 +1,12 @@
+---
+version: '3'
+services:
+  wifi-toggle:
+    build: .
+    ports:
+      - 8080:8080
+    environment:
+      WIFI_TOGGLE_SSH_USERHOST: ${WIFI_TOGGLE_SSH_USERHOST}
+      WIFI_TOGGLE_SSH_PRIVKEY: ${WIFI_TOGGLE_SSH_PRIVKEY}
+      WIFI_TOGGLE_LISTEN_IP: '::'
+      WIFI_TOGGLE_SSH_KNOWN_HOSTS: ${WIFI_TOGGLE_SSH_KNOWN_HOSTS}
