@@ -1,0 +1,21 @@
+#+startup: indent
+* Microservice to toggle a RouterOS device's wifi
+** Start the service
+Be sure to set up the environment as mentioned below.
+#+begin_src sh
+  set -a
+  . .env
+  docker-compose up -d
+#+end_src
+** =.env=
+| Environment variable          | Contents                                                                         |
+|-------------------------------+----------------------------------------------------------------------------------|
+| =WIFI_TOGGLE_SSH_USERHOST=    | =youruser@yourhost.inet=                                                         |
+| =WIFI_TOGGLE_SSH_PRIVKEY=     | base64 encoded contents of an openssh private key to use for key authentication. |
+| =WIFI_TOGGLE_SSH_KNOWN_HOSTS= | base64 encoded contents of the known hosts file.                                 |
+
+The privkey is used to authenticate the client with the server.  The known
+hosts is needed to validate the remote host is what host the microservice
+thinks it is.
+** License
+[[file:LICENSE][ISC]]
