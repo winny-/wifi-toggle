@@ -26,6 +26,10 @@ Offers the following routes to enable/disable wifi on a RouterOS host.  Can also
 (define *listen-port* (make-parameter 8080))
 (define *listen-ip* (make-parameter "127.0.0.1"))
 (define *known-hosts* (make-parameter #f))
+(define ENABLE-WIFI
+  ":foreach v in=[/interface wireless find where disabled=yes] do={/interface wireless set \\$v disabled=no}")
+(define DISABLE-WIFI
+  ":foreach v in=[/interface wireless find where disabled=no] do={/interface wireless set \\$v disabled=yes}")
 
 (define-logger app)
 
@@ -34,7 +38,7 @@ Offers the following routes to enable/disable wifi on a RouterOS host.  Can also
                           (λ (req)
                             ;; This uses routeros scripts to disable/enable
                             ;; wireless interfaces.
-                            (match (ssh-command (format "/system script run ~a-wifi" verb))
+                            (match (ssh-command (match verb ["enable" ENABLE-WIFI] ["disable" DISABLE-WIFI]))
                               [""
                                (response/json (hash 'status (string-append verb "d")))]
                               [non-empty-string
