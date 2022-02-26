@@ -68,7 +68,7 @@ Offers the following routes to enable/disable wifi on a RouterOS host.  Can also
 
 
 (define (ssh-command cmd)
-  (define incantation (format "ssh -F/dev/null -oUserKnownHostsFile=~a -i~a ~a ~a" (*known-hosts*) (*keyfile*) (*userhost*) cmd))
+  (define incantation (format "ssh -F/dev/null -oUserKnownHostsFile=~a -oPubkeyAcceptedKeyTypes=+ssh-rsa -i~a ~a ~a" (*known-hosts*) (*keyfile*) (*userhost*) cmd))
   (log-app-debug "SSH: ~a" incantation)
   (match-define (list out in pid err proc)
     (process incantation))
